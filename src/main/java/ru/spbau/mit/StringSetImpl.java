@@ -13,27 +13,16 @@ public class StringSetImpl implements StringSet {
 
     @Override
     public boolean add(String element) {
-/*        if (element.length() == 0) {
-            doesContainEmptyString = true;
-        }*/
         return root.addFromNode(element, 0);
     }
 
     @Override
     public boolean contains(String element) {
-/*        if (element.length() == 0) {
-            return doesContainEmptyString;
-        }*/
         return root.containsFromNode(element, 0);
     }
 
     @Override
     public boolean remove(String element) {
-/*        if (element.length() == 0) {
-            boolean copyDoesContainEmptyString = doesContainEmptyString;
-            doesContainEmptyString = false;
-            return copyDoesContainEmptyString;
-        }*/
         return root.removeFromNode(element, 0);
     }
 
