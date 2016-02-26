@@ -40,7 +40,7 @@ public class StringSetImpl implements StringSet {
         if (Character.isLowerCase(letter)) {
             return letter - 'a';
         }
-        return Character.toLowerCase(letter) - 'a' + 26;
+        return Character.toLowerCase(letter) - 'a' + (ELEMENTS_MAX / 2);
     }
 
     /*
@@ -72,8 +72,7 @@ public class StringSetImpl implements StringSet {
             if (children[nextIndex] == null) {
                 children[nextIndex] = new Node();
             }
-            if (children[nextIndex].addFromNode(stringToBeAdded, pos + 1))
-            {
+            if (children[nextIndex].addFromNode(stringToBeAdded, pos + 1)) {
                 size++;
                 return true;
             }
@@ -103,8 +102,7 @@ public class StringSetImpl implements StringSet {
             if (children[nextIndex] == null) {
                 return false;
             }
-            if (children[nextIndex].removeFromNode(stringToBeRemoved, pos + 1))
-            {
+            if (children[nextIndex].removeFromNode(stringToBeRemoved, pos + 1)) {
                 size--;
                 if (children[nextIndex].size == 0) {
                     children[nextIndex] = null;
@@ -118,8 +116,7 @@ public class StringSetImpl implements StringSet {
             return size;
         }
 
-        public int countPrefixFromNode(String prefix, int pos)
-        {
+        public int countPrefixFromNode(String prefix, int pos)  {
             if (pos == prefix.length()) {
                 return size;
             }
