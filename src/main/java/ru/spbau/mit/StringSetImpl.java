@@ -48,7 +48,7 @@ public class StringSetImpl implements StringSet {
     Trie vertice. Size stands for number of
     nodes in corresponding subtrie which end of word flag is on.
     */
-    private static class Node {
+    private static final class Node {
         private boolean isWordEnd;
         private Node[] children;
         private int size;
@@ -125,15 +125,14 @@ public class StringSetImpl implements StringSet {
             return size;
         }
 
-        public int countPrefixFromNode(String prefix)  {
+        public int countPrefixFromNode(String prefix) {
             Node node = descent(prefix, 0);
             if (node != null) {
                 return node.getSize();
             }
-            else {
-                return 0;
-            }
+            return 0;
         }
     }
 
 }
+
