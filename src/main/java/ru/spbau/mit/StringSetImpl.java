@@ -5,11 +5,12 @@ package ru.spbau.mit;
   on 26.02.2015
 */
 
+import com.sun.istack.internal.Nullable;
+
 public class StringSetImpl implements StringSet {
 
     private Node root = new Node();
-    private static final int ELEMENTS_MAX = 52;
-    //private static boolean doesContainEmptyString = false;
+    private static final int CHILDREN_MAX = 52;
 
     @Override
     public boolean add(String element) {
@@ -18,7 +19,7 @@ public class StringSetImpl implements StringSet {
 
     @Override
     public boolean contains(String element) {
-        return root.containsFromNode(element, 0);
+        return root.containsFromNode(element);
     }
 
     @Override
@@ -33,29 +34,41 @@ public class StringSetImpl implements StringSet {
 
     @Override
     public int howManyStartsWithPrefix(String prefix) {
-        return root.countPrefixFromNode(prefix, 0);
+        return root.countPrefixFromNode(prefix);
     }
 
-    public static int latinLetterToInt(char letter) {
+    private static int latinLetterToInt(char letter) {
         if (Character.isLowerCase(letter)) {
             return letter - 'a';
         }
-        return Character.toLowerCase(letter) - 'a' + (ELEMENTS_MAX / 2);
+        return Character.toLowerCase(letter) - 'a' + (CHILDREN_MAX / 2);
     }
 
     /*
     Trie vertice. Size stands for number of
     nodes in corresponding subtrie which end of word flag is on.
     */
-    public static class Node {
+    private static class Node {
         private boolean isWordEnd;
         private Node[] children;
         private int size;
 
-        public Node() {
+        private Node() {
             isWordEnd = false;
-            children = new Node[ELEMENTS_MAX];
+            children = new Node[CHILDREN_MAX];
             size = 0;
+        }
+
+        @Nullable
+        private Node descent(String stringToBeChecked, int pos) {
+            if (pos == stringToBeChecked.length()) {
+                return this;
+            }
+            int nextIndex = latinLetterToInt(stringToBeChecked.charAt(pos));
+            if (children[nextIndex] != null) {
+                return children[nextIndex].descent(stringToBeChecked, pos + 1);
+            }
+            return null;
         }
 
         public boolean addFromNode(String stringToBeAdded, int pos) {
@@ -79,13 +92,9 @@ public class StringSetImpl implements StringSet {
             return false;
         }
 
-        public boolean containsFromNode(String stringToBeFound, int pos) {
-            if (pos == stringToBeFound.length()) {
-                return isWordEnd;
-            }
-
-            int nextIndex = latinLetterToInt(stringToBeFound.charAt(pos));
-            return children[nextIndex] != null && children[nextIndex].containsFromNode(stringToBeFound, pos + 1);
+        public boolean containsFromNode(String stringToBeFound) {
+            Node node = descent(stringToBeFound, 0);
+            return node != null && node.isWordEnd;
         }
 
         public boolean removeFromNode(String stringToBeRemoved, int pos) {
@@ -116,16 +125,14 @@ public class StringSetImpl implements StringSet {
             return size;
         }
 
-        public int countPrefixFromNode(String prefix, int pos)  {
-            if (pos == prefix.length()) {
-                return size;
+        public int countPrefixFromNode(String prefix)  {
+            Node node = descent(prefix, 0);
+            if (node != null) {
+                return node.getSize();
             }
-
-            int nextIndex = latinLetterToInt(prefix.charAt(pos));
-            if (children[nextIndex] == null) {
+            else {
                 return 0;
             }
-            return children[nextIndex].countPrefixFromNode(prefix, pos + 1);
         }
     }
 
