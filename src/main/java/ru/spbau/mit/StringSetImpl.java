@@ -5,8 +5,6 @@ package ru.spbau.mit;
   on 26.02.2015
 */
 
-import com.sun.istack.internal.Nullable;
-
 public class StringSetImpl implements StringSet {
 
     private Node root = new Node();
@@ -58,8 +56,7 @@ public class StringSetImpl implements StringSet {
             children = new Node[CHILDREN_MAX];
             size = 0;
         }
-
-        @Nullable
+        
         private Node descent(String stringToBeChecked, int pos) {
             if (pos == stringToBeChecked.length()) {
                 return this;
