@@ -56,7 +56,7 @@ public class StringSetImpl implements StringSet {
             children = new Node[CHILDREN_MAX];
             size = 0;
         }
-        
+
         private Node descent(String stringToBeChecked, int pos) {
             if (pos == stringToBeChecked.length()) {
                 return this;
