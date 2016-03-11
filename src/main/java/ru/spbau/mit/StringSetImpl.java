@@ -7,12 +7,16 @@ package ru.spbau.mit;
 
 public class StringSetImpl implements StringSet {
 
-    private static final int CHILDREN_MAX = 52;
+    private static final int CHILDREN_MAX = 52;          /* Latin alphabet length */
     private Node root = new Node();
 
     @Override
     public boolean add(String element) {
-        return root.addFromNode(element, 0);
+        if (contains(element)) {
+            return false;
+        }
+        root.addFromNode(element, 0);
+        return true;
     }
 
     @Override
@@ -22,7 +26,11 @@ public class StringSetImpl implements StringSet {
 
     @Override
     public boolean remove(String element) {
-        return root.removeFromNode(element, 0);
+        if (!contains(element)) {
+            return false;
+        }
+        root.removeFromNode(element, 0);
+        return true;
     }
 
     @Override
@@ -56,7 +64,7 @@ public class StringSetImpl implements StringSet {
             children = new Node[CHILDREN_MAX];
             size = 0;
         }
-
+        
         private Node descent(String stringToBeChecked, int pos) {
             if (pos == stringToBeChecked.length()) {
                 return this;
@@ -68,15 +76,11 @@ public class StringSetImpl implements StringSet {
             return null;
         }
 
-        private boolean addFromNode(String stringToBeAdded, int pos) {
-            if (pos == 0 && containsFromNode(stringToBeAdded)) {
-                return false;
-            }
-
+        private void addFromNode(String stringToBeAdded, int pos) {
             if (pos == stringToBeAdded.length()) {
                 size++;
                 isWordEnd = true;
-                return true;
+                return;
             }
 
             int nextIndex = latinLetterToInt(stringToBeAdded.charAt(pos));
@@ -85,7 +89,6 @@ public class StringSetImpl implements StringSet {
             }
             size++;
             children[nextIndex].addFromNode(stringToBeAdded, pos + 1);
-            return true;
         }
 
         private boolean containsFromNode(String stringToBeFound) {
@@ -93,15 +96,11 @@ public class StringSetImpl implements StringSet {
             return node != null && node.isWordEnd;
         }
 
-        private boolean removeFromNode(String stringToBeRemoved, int pos) {
-            if (pos == 0 && !containsFromNode(stringToBeRemoved)) {
-                return false;
-            }
-
+        private void removeFromNode(String stringToBeRemoved, int pos) {
             if (pos == stringToBeRemoved.length()) {
                 size--;
                 isWordEnd = false;
-                return true;
+                return;
             }
 
             int nextIndex = latinLetterToInt(stringToBeRemoved.charAt(pos));
@@ -110,7 +109,6 @@ public class StringSetImpl implements StringSet {
             if (children[nextIndex].size == 0) {
                 children[nextIndex] = null;
             }
-            return true;
         }
 
         private int getSize() {
