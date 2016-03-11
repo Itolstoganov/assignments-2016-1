@@ -7,8 +7,8 @@ package ru.spbau.mit;
 
 public class StringSetImpl implements StringSet {
 
-    private Node root = new Node();
     private static final int CHILDREN_MAX = 52;
+    private Node root = new Node();
 
     @Override
     public boolean add(String element) {
@@ -56,7 +56,7 @@ public class StringSetImpl implements StringSet {
             children = new Node[CHILDREN_MAX];
             size = 0;
         }
-
+        
         private Node descent(String stringToBeChecked, int pos) {
             if (pos == stringToBeChecked.length()) {
                 return this;
@@ -68,11 +68,12 @@ public class StringSetImpl implements StringSet {
             return null;
         }
 
-        public boolean addFromNode(String stringToBeAdded, int pos) {
+        private boolean addFromNode(String stringToBeAdded, int pos) {
+            if (pos == 0 && containsFromNode(stringToBeAdded)) {
+                return false;
+            }
+
             if (pos == stringToBeAdded.length()) {
-                if (isWordEnd) {
-                    return false;
-                }
                 size++;
                 isWordEnd = true;
                 return true;
@@ -82,47 +83,41 @@ public class StringSetImpl implements StringSet {
             if (children[nextIndex] == null) {
                 children[nextIndex] = new Node();
             }
-            if (children[nextIndex].addFromNode(stringToBeAdded, pos + 1)) {
-                size++;
-                return true;
-            }
-            return false;
+            size++;
+            children[nextIndex].addFromNode(stringToBeAdded, pos + 1);
+            return true;
         }
 
-        public boolean containsFromNode(String stringToBeFound) {
+        private boolean containsFromNode(String stringToBeFound) {
             Node node = descent(stringToBeFound, 0);
             return node != null && node.isWordEnd;
         }
 
-        public boolean removeFromNode(String stringToBeRemoved, int pos) {
-            if (pos == stringToBeRemoved.length()) {
-                if (isWordEnd) {
-                    size--;
-                    isWordEnd = false;
-                    return true;
-                }
+        private boolean removeFromNode(String stringToBeRemoved, int pos) {
+            if (pos == 0 && !containsFromNode(stringToBeRemoved)) {
                 return false;
+            }
+
+            if (pos == stringToBeRemoved.length()) {
+                size--;
+                isWordEnd = false;
+                return true;
             }
 
             int nextIndex = latinLetterToInt(stringToBeRemoved.charAt(pos));
-            if (children[nextIndex] == null) {
-                return false;
+            children[nextIndex].removeFromNode(stringToBeRemoved, pos + 1);
+            size--;
+            if (children[nextIndex].size == 0) {
+                children[nextIndex] = null;
             }
-            if (children[nextIndex].removeFromNode(stringToBeRemoved, pos + 1)) {
-                size--;
-                if (children[nextIndex].size == 0) {
-                    children[nextIndex] = null;
-                }
-                return true;
-            }
-            return false;
+            return true;
         }
 
-        public int getSize() {
+        private int getSize() {
             return size;
         }
 
-        public int countPrefixFromNode(String prefix) {
+        private int countPrefixFromNode(String prefix) {
             Node node = descent(prefix, 0);
             if (node != null) {
                 return node.getSize();
