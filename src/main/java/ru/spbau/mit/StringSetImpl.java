@@ -70,7 +70,10 @@ public class StringSetImpl implements StringSet, StreamSerializable {
     }
 
     private static char intToLatinLetter(int index) {
-        return (char) (index + 'a');
+        if (index < (CHILDREN_MAX / 2)) {
+            return (char) (index + 'a');
+        }
+        return (char) (index + 'A' - CHILDREN_MAX / 2);
     }
 
     /*
@@ -155,7 +158,7 @@ public class StringSetImpl implements StringSet, StreamSerializable {
 
                 for (int i = 0; i < CHILDREN_MAX; i++) {
                     if (children[i] != null) {
-                        outStream.writeChar(i);
+                        outStream.writeChar(intToLatinLetter(i));
                         children[i].serializeFromNode(outStream);
                     }
                 }
