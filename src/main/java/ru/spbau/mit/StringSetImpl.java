@@ -47,16 +47,18 @@ public class StringSetImpl implements StringSet, StreamSerializable {
 
     @Override
     public void serialize(OutputStream out) {
-        DataOutputStream outStream = new DataOutputStream(out);
-        root.serializeFromNode(outStream);
+        try (DataOutputStream outStream = new DataOutputStream(out)) {
+            root.serializeFromNode(outStream);
+        } catch (IOException e) {
+            throw new SerializationException();
+        }
+
     }
 
     @Override
     public void deserialize(InputStream in) {
         try (DataInputStream inStream = new DataInputStream(in)) {
-            if (inStream.available() != 0) {
-                root.deserializeFromNode(inStream);
-            }
+            root.deserializeFromNode(inStream);
         } catch (IOException e) {
             throw new SerializationException();
         }
@@ -149,38 +151,31 @@ public class StringSetImpl implements StringSet, StreamSerializable {
             return 0;
         }
 
-        private void serializeFromNode(DataOutputStream outStream) {
-            try {
-                outStream.writeBoolean(isWordEnd);
-                outStream.writeInt(size);
-                int numberOfChildren = numberOfChildren();
-                outStream.writeInt(numberOfChildren);
+        private void serializeFromNode(DataOutputStream outStream) throws IOException {
+            outStream.writeBoolean(isWordEnd);
+            int numberOfChildren = numberOfChildren();
+            outStream.writeInt(numberOfChildren);
 
-                for (int i = 0; i < CHILDREN_MAX; i++) {
-                    if (children[i] != null) {
-                        outStream.writeChar(intToLatinLetter(i));
-                        children[i].serializeFromNode(outStream);
-                    }
+            for (int i = 0; i < CHILDREN_MAX; i++) {
+                if (children[i] != null) {
+                    outStream.writeChar(intToLatinLetter(i));
+                    children[i].serializeFromNode(outStream);
                 }
-            } catch (IOException e) {
-                throw new SerializationException();
             }
         }
 
-        private void deserializeFromNode(DataInputStream inStream) {
-            try {
-                isWordEnd = inStream.readBoolean();
-                size = inStream.readInt();
-                int numberOfChildren = inStream.readInt();
-
-                for (int i = 0; i < numberOfChildren; i++) {
-                    char letter = inStream.readChar();
-                    int index = latinLetterToInt(letter);
-                    children[index] = new Node();
-                    children[index].deserializeFromNode(inStream);
-                }
-            } catch (IOException e) {
-                throw new SerializationException();
+        private void deserializeFromNode(DataInputStream inStream) throws IOException {
+            isWordEnd = inStream.readBoolean();
+            int numberOfChildren = inStream.readInt();
+            if (isWordEnd) {
+                size = 1;
+            }
+            for (int i = 0; i < numberOfChildren; i++) {
+                char letter = inStream.readChar();
+                int index = latinLetterToInt(letter);
+                children[index] = new Node();
+                children[index].deserializeFromNode(inStream);
+                size += children[index].getSize();
             }
         }
 
