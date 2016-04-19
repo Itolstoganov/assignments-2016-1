@@ -39,7 +39,7 @@ public final class FirstPartTasks {
                 .filter(a -> a.getTracks().stream()
                             .mapToInt(Track::getRating)
                             .anyMatch(x -> x > RATING_THRESHOLD))
-                .sorted((a1, a2) -> a1.getName().compareTo(a2.getName()))
+                .sorted(Comparator.comparing(Album::getName))
                 .collect(Collectors.toList());
     }
 
@@ -98,16 +98,12 @@ public final class FirstPartTasks {
     // Вернуть строку, состояющую из конкатенаций переданного массива, и окруженную строками "<", ">"
     // см. тесты
     public static String joinTo(String... strings) {
-        return "<"
-                + Arrays.stream(strings).
-                        collect(Collectors.joining(", "))
-                            + ">";
+        return Arrays.stream(strings).
+                collect(Collectors.joining(", ", "<", ">"));
     }
 
     // Вернуть поток из объектов класса 'clazz'
     public static <R> Stream<R> filterIsInstance(Stream<?> s, Class<R> clazz) {
-        return s
-                .filter(clazz::isInstance)
-                .map(clazz::cast);
+        return (Stream<R>) s.filter(clazz::isInstance);
     }
 }
