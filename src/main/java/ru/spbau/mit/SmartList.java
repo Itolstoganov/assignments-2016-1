@@ -82,6 +82,25 @@ public class SmartList<E> extends AbstractList<E> implements List<E> {
         }
     }
 
+    @Override
+    @SuppressWarnings("unchecked")
+    public E set(int i, E element) {
+        if (i < 0 || i >= size) throw new IndexOutOfBoundsException();
+        Object previous;
+        if (size == 1) {
+            previous = reference;
+            reference = element;
+        } else if (size <= ARR_SIZE_UPPER) {
+            Object[] arr = (Object[]) reference;
+            previous = arr[i];
+            arr[i] = element;
+        } else {
+            ArrayList list = (ArrayList<Object>) reference;
+            previous = list.set(i, element);
+        }
+        return (E) previous;
+    }
+
 
     @Override
     @SuppressWarnings("unchecked")
