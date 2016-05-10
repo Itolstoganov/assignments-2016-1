@@ -10,8 +10,6 @@ public class LightFutureImpl<R> implements LightFuture<R> {
     private volatile Supplier<R> supplier = null;
     private volatile Throwable exception = null;
 
-    private final Object dummy = new Object();
-
     protected LightFutureImpl(ThreadPoolImpl threadPool, Supplier<R> supplier) {
         this.threadPool = threadPool;
         this.supplier = supplier;
