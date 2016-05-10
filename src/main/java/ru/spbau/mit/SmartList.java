@@ -55,31 +55,32 @@ public class SmartList<E> extends AbstractList<E> implements List<E> {
     @Override
     @SuppressWarnings("unchecked")
     public E remove(int index) {
-        if (index >= size() || index < 0) {
+        if (index < 0 || index >= size) {
             throw new IndexOutOfBoundsException();
-        } else {
-            E ans;
-            if (size == 1) {
-                ans = (E) reference;
-                reference = null;
-                return ans;
-            } else if (size >= ARR_SIZE_LOWER && size <= ARR_SIZE_UPPER) {
-                ans = ((E[]) reference)[index];
-                if (size == ARR_SIZE_LOWER || index == 1) {
-                    reference = ((E[]) reference)[0];
-                }
-                if (size == ARR_SIZE_LOWER || index == 0) {
-                    reference = ((E[]) reference)[1];
-                }
-            } else if (size == ARR_SIZE_UPPER + 1) {
-                ans = ((ArrayList<E>) reference).remove(index);
-                Object[] arr = ((ArrayList<E>) reference).toArray();
-            } else {
-                ans = ((ArrayList<E>) reference).remove(index);
-            }
-            size--;
-            return ans;
         }
+        Object element;
+        if (size == 1) {
+            element = reference;
+            reference = null;
+        } else if (size == 2) {
+            Object[] arr = (Object[]) reference;
+            element = arr[index];
+            reference = arr[1 - index];
+        } else if (size <= ARR_SIZE_UPPER) {
+            Object[] arr = (Object[]) reference;
+            element = arr[index];
+            System.arraycopy(arr, index + 1, arr, index, size - 1 - index);
+            arr[size - 1] = null;
+        } else if (size == ARR_SIZE_UPPER + 1) {
+            ArrayList list = (ArrayList) reference;
+            element = list.remove(index);
+            reference = list.toArray();
+        } else {
+            ArrayList list = (ArrayList) reference;
+            element = list.remove(index);
+        }
+        --size;
+        return (E) element;
     }
 
     @Override
