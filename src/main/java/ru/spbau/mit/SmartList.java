@@ -85,7 +85,9 @@ public class SmartList<E> extends AbstractList<E> implements List<E> {
     @Override
     @SuppressWarnings("unchecked")
     public E set(int i, E element) {
-        if (i < 0 || i >= size) throw new IndexOutOfBoundsException();
+        if (i < 0 || i >= size) {
+            throw new IndexOutOfBoundsException();
+        }
         Object previous;
         if (size == 1) {
             previous = reference;
