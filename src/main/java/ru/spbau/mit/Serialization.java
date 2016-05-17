@@ -44,20 +44,37 @@ public class Serialization {
         Reader reader = new FileReader(filename);
         boolean isEmpty = true;
         Stream<String> lines = Files.lines(Paths.get(filename));
-     //   lines.forEach(s ->
-
-
-        //);
+        lines.forEach(s -> {
+                    try {
+                        Setter(target, s);
+                    } catch (NoSuchMethodException e) {
+                        e.printStackTrace();
+                    } catch (InvocationTargetException e) {
+                        e.printStackTrace();
+                    } catch (IllegalAccessException e) {
+                        e.printStackTrace();
+                    }
+                }
+        );
     }
 
-//    private static boolean Setter(Object target, String params) throws NoSuchMethodException {
-//        String[] words = params.split(" ");
-//        String name = "set" + words[0];
-//        String value = words[1];
-//
-//        Method method = target.getClass().getMethod(name);
-//        method.invoke(obj, arg1, arg2,...);
-//    }
+    private static void Setter(Object target, String params) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        String[] words = params.split(" ");
+        String type = words[0];
+        String name = "set" + words[1];
+        String value = words[2];
+
+        if(Objects.equals(type, "int")) {
+            int valuei = Integer.parseInt(value);
+            Method method = target.getClass().getMethod(name, int.class);
+            method.invoke(target, valuei);
+        }
+        if(Objects.equals(type, "string")) {
+            Method method = target.getClass().getMethod(name, java.lang.String.class);
+            method.invoke(target, value);
+        }
+
+    }
 
     private static boolean isGetter(Method method) {
         if (!method.getName().startsWith("get")) {
