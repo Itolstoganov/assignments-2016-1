@@ -42,7 +42,7 @@ public final class Serialization {
         out.close();
     }
 
-    public static void deserialize(String fullClassName, String filename) throws ClassNotFoundException,
+    public static Object deserialize(String fullClassName, String filename) throws ClassNotFoundException,
             IllegalAccessException, InstantiationException, IOException {
         Class c = Class.forName(fullClassName);
         Object target = c.newInstance();
@@ -61,6 +61,7 @@ public final class Serialization {
                     }
                 }
         );
+        return target;
     }
 
     private static void setter(Object target, String params) throws NoSuchMethodException,

@@ -52,9 +52,10 @@ public class SerializationTest {
         testClass.setValue(55);
         Serialization.serialize(testClass, "src/test/resources/test01");
         String name = (testClass.getClass()).getName();
-        Serialization.deserialize(name,  "src/test/resources/test01");
-        assertEquals(testClass.getName(), "albert");
-        assertEquals(testClass.getValue(), 55);
+        TestClass testClass1 = new TestClass();
+        testClass1 = (TestClass) Serialization.deserialize(name,  "src/test/resources/test01");
+        assertEquals(testClass1.getName(), testClass.getName());
+        assertEquals(testClass1.getValue(), testClass.getValue());
     }
 
 }
