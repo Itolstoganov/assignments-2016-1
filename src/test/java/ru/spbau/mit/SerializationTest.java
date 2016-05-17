@@ -56,6 +56,7 @@ public class SerializationTest {
         testClass1 = (TestClass) Serialization.deserialize(name,  "src/test/resources/test01");
         assertEquals(testClass1.getName(), testClass.getName());
         assertEquals(testClass1.getValue(), testClass.getValue());
+        assertEquals(testClass1.getOther(), 0, 0.001);
     }
 
 }
