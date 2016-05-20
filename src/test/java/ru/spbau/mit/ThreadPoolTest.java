@@ -5,32 +5,13 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
 import java.util.function.Function;
-import java.util.function.Supplier;
+
+import static org.junit.Assert.assertTrue;
 
 public class ThreadPoolTest {
-
-
-    private class Task implements Supplier<Integer> {
-
-        private final int sleep;
-        private final int answer;
-
-        Task(int sleep, int answer) {
-            this.sleep = sleep;
-            this.answer = answer;
-        }
-
-        @Override
-        public Integer get() {
-            try {
-                Thread.sleep(sleep);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            return answer;
-        }
-    }
 
     private class IntThenApplier implements Function<Integer, String> {
 
@@ -75,19 +56,20 @@ public class ThreadPoolTest {
     }
 
     @Test
-    public void singleSimpleTest() throws LightExecutionException, InterruptedException {
+    public void testSingleSimple() throws LightExecutionException, InterruptedException {
         ThreadPool threadPool = new ThreadPoolImpl(1);
-        LightFuture<Integer> future = threadPool.submit(new Task(20, 54));
+        LightFuture<Integer> future = threadPool.submit(() -> 54);
         Assert.assertEquals((int) future.get(), 54);
         threadPool.shutdown();
     }
 
     @Test
-    public void multipleSimpleTest() throws LightExecutionException, InterruptedException {
+    public void testMultipleSimple() throws LightExecutionException, InterruptedException {
         ThreadPool threadPool = new ThreadPoolImpl(15);
         List<LightFuture<Integer>> futures = new ArrayList<>();
         for (int i = 0; i < 15; i++) {
-            futures.add(threadPool.submit(new Task(20, i)));
+            final int finalI = i;
+            futures.add(threadPool.submit(() -> finalI));
         }
 
         for (int i = 0; i < 15; i++) {
@@ -97,12 +79,13 @@ public class ThreadPoolTest {
     }
 
     @Test
-    public void thenApplyTest() throws LightExecutionException, InterruptedException {
+    public void testThenApply() throws LightExecutionException, InterruptedException {
         ThreadPool threadPool = new ThreadPoolImpl(10);
         List<LightFuture<Integer>> futures = new ArrayList<>();
         List<LightFuture<String>> applies = new ArrayList<>();
         for (int i = 0; i < 4; i++) {
-            futures.add(threadPool.submit(new Task(20, i)));
+            final int finalI = i;
+            futures.add(threadPool.submit(() ->  finalI));
             for (int j = 1; j < 4; j++) {
                 for (int k = 1; k < 4; k++) {
                     IntThenApplier ita = new IntThenApplier(20, Integer.toString(42));
@@ -120,13 +103,40 @@ public class ThreadPoolTest {
 
 
     @Test
-    public void threadNumberTest() throws LightExecutionException, InterruptedException {
-        ThreadPoolImpl threadPool = new ThreadPoolImpl(20);
-        List<LightFuture<Integer>> futures = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
-            futures.add(threadPool.submit(new Task(20, i)));
+    public void testThenApplyBlocker() throws InterruptedException {
+        final ThreadPool threadPool = new ThreadPoolImpl(2);
+        IntThenApplier ita = new IntThenApplier(20, Integer.toString(42));
+        final LightFuture<Integer> blockingTask = threadPool.submit(() -> {
+            while (true) {
+                int checkstyleDummy = 0;
+            }
+        });
+        blockingTask.thenApply(ita);
+        final LightFuture<Integer> blockedTask = threadPool.submit(() -> 10);
+        Thread.sleep(200);
+        assertTrue(blockedTask.isReady());
+        threadPool.shutdown();
+    }
+
+    @Test
+    public void testThreadNumber() throws LightExecutionException, InterruptedException {
+        ThreadPoolImpl threadPool = new ThreadPoolImpl(3);
+        CyclicBarrier barrier = new CyclicBarrier(3);
+        List<LightFuture<Integer>> tasks = new ArrayList<>();
+        for (int i = 0; i < 3; i++) {
+            tasks.add(threadPool.submit(() -> {
+                try {
+                    barrier.await();
+                } catch (InterruptedException | BrokenBarrierException e) {
+                    throw new RuntimeException(e);
+                }
+                return 0;
+            }));
         }
-        Assert.assertEquals(threadPool.threadsNumber(), 20);
+        for (LightFuture task : tasks) {
+            task.get();
+            assertTrue(task.isReady());
+        }
         threadPool.shutdown();
     }
 

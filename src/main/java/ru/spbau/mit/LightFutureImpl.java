@@ -1,18 +1,21 @@
 package ru.spbau.mit;
 
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class LightFutureImpl<R> implements LightFuture<R> {
+    private final Supplier<R> supplier;
     private ThreadPoolImpl threadPool;
     private volatile R result = null;
-    private volatile Supplier<R> supplier = null;
     private volatile Throwable exception = null;
+    private final List<LightFutureImpl> children = new ArrayList<>();
 
     protected LightFutureImpl(ThreadPoolImpl threadPool, Supplier<R> supplier) {
-        this.threadPool = threadPool;
         this.supplier = supplier;
+        this.threadPool = threadPool;
     }
 
 
@@ -23,7 +26,7 @@ public class LightFutureImpl<R> implements LightFuture<R> {
     @Override
     public R get() throws LightExecutionException, InterruptedException {
         synchronized (this) {
-            if (!isReady()) {
+            while (!isReady()) {
                 this.wait();
             }
         }
@@ -47,7 +50,11 @@ public class LightFutureImpl<R> implements LightFuture<R> {
                 }
             return f.apply(parentResult);
         });
-        threadPool.addToQueue(child);
+        if (isReady()) {
+            threadPool.addToQueue(child);
+        } else {
+            children.add(child);
+        }
         return child;
     }
 
@@ -60,8 +67,10 @@ public class LightFutureImpl<R> implements LightFuture<R> {
                 } catch (Exception e) {
                     exception = e;
                 }
+                children.stream().forEach(c -> this.threadPool.addToQueue(c));
             }
             notifyAll();
         }
     }
+
 }

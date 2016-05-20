@@ -1,6 +1,8 @@
 package ru.spbau.mit;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 import java.util.function.Supplier;
 
@@ -8,22 +10,12 @@ public class ThreadPoolImpl implements ThreadPool {
 
     private boolean isWorking = true;
     private BlockingQueue<LightFutureImpl> taskQueue;
-    private FutureWorker[] futureWorkers;
-
+    private List<Thread> workers;
     private final class BlockingQueue<E> {
 
         private Queue<E> queue = new LinkedList<>();
-        private int limit;
-
-        private BlockingQueue(int limit) {
-            this.limit = limit;
-        }
-
 
         public synchronized void enqueue(E element) throws InterruptedException {
-            while (this.queue.size() == this.limit) {
-                wait();
-            }
             if (this.queue.size() == 0) {
                 notifyAll();
             }
@@ -35,57 +27,38 @@ public class ThreadPoolImpl implements ThreadPool {
             while (this.queue.size() == 0) {
                 wait();
             }
-            if (this.queue.size() == this.limit) {
-                notifyAll();
-            }
             return this.queue.remove();
         }
     }
 
-    private class FutureWorker extends Thread {
-        private ThreadPoolImpl threadPool;
-        private boolean isWorking = true;
-
-        FutureWorker(ThreadPoolImpl threadPool) {
-            this.threadPool = threadPool;
-        }
-
-
-        public void run() {
-            while (isWorking()) {
-                try {
-                    LightFutureImpl lightFuture  = taskQueue.dequeue();
-                    lightFuture.execute();
-                } catch (InterruptedException e) {
-                    this.futureStop();
-                }
-            }
-        }
-
-        public synchronized void futureStop() {
-            isWorking = false;
-            this.interrupt();
-        }
-
-        public boolean isWorking() {
-            return this.isWorking && threadPool.getIsWorking();
-        }
-    }
-
     public ThreadPoolImpl(int n) {
-        futureWorkers = new FutureWorker[n];
-        taskQueue = new BlockingQueue<>(n);
+        workers = new ArrayList<>();
+        taskQueue = new BlockingQueue<>();
         isWorking = true;
         for (int i = 0; i < n; i++) {
-            futureWorkers[i] = new FutureWorker(this);
-            futureWorkers[i].start();
+            workers.add(new Thread(() -> {
+                while (!Thread.currentThread().isInterrupted()) {
+                    LightFutureImpl lightFuture = null;
+                    try {
+                        lightFuture = taskQueue.dequeue();
+                    } catch (InterruptedException e) {
+                    }
+                    if (lightFuture != null) {
+                        lightFuture.execute();
+                    }
+                }
+            }));
+            workers.get(i).start();
         }
     }
 
     @Override
     public <R> LightFuture<R> submit(Supplier<R> supplier) {
         LightFutureImpl<R> lightFuture = new LightFutureImpl<>(this, supplier);
-        this.addToQueue(lightFuture);
+        synchronized (this) {
+            this.addToQueue(lightFuture);
+            notifyAll();
+        }
         return lightFuture;
     }
 
@@ -93,8 +66,8 @@ public class ThreadPoolImpl implements ThreadPool {
     public void shutdown() {
         synchronized (this) {
             this.isWorking = false;
-            for (FutureWorker worker : futureWorkers) {
-                worker.futureStop();
+            for (Thread worker : workers) {
+                worker.interrupt();
             }
         }
     }
@@ -106,14 +79,9 @@ public class ThreadPoolImpl implements ThreadPool {
     protected synchronized void addToQueue(LightFutureImpl task) {
         try {
             taskQueue.enqueue(task);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        } catch (InterruptedException e) {    //There's no need to handle that
         }
     }
 
-    //For testing purposes
-    public int threadsNumber() {
-        return futureWorkers.length;
-    }
 }
 
